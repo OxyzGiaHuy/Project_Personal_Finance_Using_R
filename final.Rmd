@@ -45,8 +45,6 @@ Finally, Tony chooses Option 3 to balance cost and risk. But how does Tony calcu
 
 # First Option
 
-
-
 ```{r}
 A <- 1 + 0.0708/12
 B <- 1.04^{1/12}
@@ -69,7 +67,6 @@ first_option_df %>% datatable()
 ```
 
 
-
 ## Loans after months
 
 ```{r}
@@ -89,10 +86,7 @@ points(x_1[length(x_1)], y_1[length(y_1)]/1000, pch = 22, col = "red")
 ```
 
 
-
-
 # Second Option
-
 
 ```{r}
 x_2 <- c(0:300)
@@ -103,16 +97,10 @@ monthly_repayment_2[1]=0
 discounted_monthly_repayment_2 <- round(1.7/C/3*(B/C)^{x_2-1},2)
 discounted_monthly_repayment_2[1]=0
 
-
 second_option_df <- data.frame(x_2, y_2, monthly_repayment_2, discounted_monthly_repayment_2, y_3)
 names(second_option_df) <- c("Month", "Loan remaining", "Monthly repayment", "Discounted monthly repayment","Total paid Money")
 second_option_df %>% datatable()
 ```
-
-
-
-
-
 
 
 ## Loans after months
@@ -147,8 +135,6 @@ points(x_2[301], y_4[301],pch = 22, col = "blue")
 
 
 
-
-
 # Third Option: A hybrid between First and Second Option
 
 ## Find critical horizon
@@ -171,7 +157,6 @@ Y_5
 plot(X_3, Y_5[0:length(X_3)], type = "l", main = "Third Option", col.main="orange", xlab = "X", ylab = "Total money paid with each X ($)", col = "darkblue")
 points(X_3[103],Y_5[103], pch = 22, col = "blue")
 ```
-
 
 ```{r}
 min(Y_5)
@@ -206,5 +191,3 @@ plot(m, SAVE, main="SAVE PLAN", col.main="orange", type = "l", xlab = "X", ylab 
 min(SAVE)
 which.min(SAVE)-1
 ```
-
-
