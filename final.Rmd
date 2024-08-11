@@ -1,0 +1,210 @@
+---
+title: "Project Personal Finance"
+author: "Team 1: Gia Huy, Hong Thu, Tuan Kiet, Phuong Duy"
+date: "2023-08-05"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include = FALSE}
+library(kableExtra)
+library(tidyquant)
+library(quantmod)
+library(tidyverse)
+library(plotly)
+library(DT)
+library(grid)
+library(lattice)
+library(lubridate)
+```
+
+# Problem
+
+Tony is a recent graduate who wants to pursue a master’s degree but doesn’t have enough money. 
+He decides to borrow \$300,000 from Direct Plus with a 7.08% annual interest rate, compounded monthly. 
+After graduation, Tony begins repaying the loan with a starting salary of $100,000 per year, increasing by 4% each year. 
+With living expenses averaging \$32,000 per year, Tony has \$68,000 per year left to repay the loan, equating to $5,667 per month. 
+Assuming a discount rate of 1.5% per year, Tony considers three repayment plans:
+
+1. **Option 1 (Max repayment to clear debt quickly):** Pay 30% of his post-living expense income monthly until the debt is cleared. 
+   Total payment: $519,440 over 239 months.
+   
+2. **Option 2 (Minimum repayment to manage risk):** Pay 10% of his post-living expense income monthly for 25 years. 
+   The government forgives the remaining debt, but Tony pays 40% tax on the forgiven amount. 
+   Total payment: $527,666 over 25 years.
+
+3. **Option 3 (Hybrid):** Follow Option 1 for 102 months, then switch to Option 2 for the remaining 198 months. 
+   The government forgives the remaining debt, but Tony pays 40% tax on the forgiven amount. 
+   Total payment: $493,168 over 25 years.
+
+Finally, Tony chooses Option 3 to balance cost and risk. But how does Tony calculate these payments, and how does he know 102 months is the optimal switch point?
+
+
+# First Option
+
+
+
+```{r}
+A <- 1 + 0.0708/12
+B <- 1.04^{1/12}
+C <- 1.015^{1/12}
+x_1 <- c(0:239)
+y <- round(300000*A^x_1 - 1700*(A^x_1 - B^x_1)/(A - B), 2)
+y_1 <- round(1700/C*((B/C)^x_1-1)/((B/C)-1),2)
+monthly_repayment <- round(1700*B^{x_1-1},2)
+monthly_repayment[1]=0
+monthly_repayment[240]=0
+discounted_monthly_repayment <- round(1700/C*(B/C)^{x_1-1},2)
+discounted_monthly_repayment[1]=0
+discounted_monthly_repayment[240]=0
+y[240]=0
+y_1[240] <- round(y_1[239] + A*y[239],2)
+
+first_option_df <- data.frame(x_1, y, monthly_repayment, discounted_monthly_repayment, y_1)
+names(first_option_df) <- c("Month", "Loan remaining", "Monthly repayment", "Discounted monthly repayment","Total paid money")
+first_option_df %>% datatable()
+```
+
+
+
+## Loans after months
+
+```{r}
+plot(x_1, y[!y < 0], main = "First Option", col.main="orange", xlab="Months", ylab="Loans after months", type = "l", col ="red")
+```
+
+
+## Total paid money after months
+
+```{r}
+plot(x_1, y_1/1000, main ="First Option", col.main="orange", xlab = "Months", ylab="Total paid money after months (thousand $)", xlim = c(0,250), ylim = c(0,550), type ="l", col="red",las = 0)
+points(x_1[length(x_1)], y_1[length(y_1)]/1000, pch = 22, col = "red")
+```
+
+```{r}
+(Total_Paid_Money_Option_1 <- first_option_df$`Total paid money`[240])
+```
+
+
+
+
+# Second Option
+
+
+```{r}
+x_2 <- c(0:300)
+y_2 <- round(300*A^x_2 - 1.7/3*(A^x_2-B^x_2)/(A-B),2)
+y_3 <- round(1.7/(3*C)*((B/C)^x_2-1)/((B/C)-1),2)
+monthly_repayment_2 <- round(1.7/3*B^{x_2-1},2)
+monthly_repayment_2[1]=0
+discounted_monthly_repayment_2 <- round(1.7/C/3*(B/C)^{x_2-1},2)
+discounted_monthly_repayment_2[1]=0
+
+
+second_option_df <- data.frame(x_2, y_2, monthly_repayment_2, discounted_monthly_repayment_2, y_3)
+names(second_option_df) <- c("Month", "Loan remaining", "Monthly repayment", "Discounted monthly repayment","Total paid Money")
+second_option_df %>% datatable()
+```
+
+
+
+
+
+
+
+## Loans after months
+
+```{r}
+plot(x_2, y_2, main = "Second Option", col.main="orange", xlab = "Months", ylab = "Loans after month (thousand $)", type = "l", las = 0, col = "blue")
+```
+
+### Total paid money
+
+```{r}
+plot(x_2, y_3, main="Second Option", col.main="orange", xlab = "Months", ylab = "Total paid money (thousands $)", ylim = c(0,600), type = "l", las = 0, col = "blue")
+y_4 <- y_3
+y_4[301]=y_3[301]+y_2[301]*0.4/(C^300)
+lines(x_2, y_4, col = "blue")
+points(x_2[301], y_4[301],pch = 22, col = "blue")
+```
+
+```{r}
+y_4[301]
+```
+
+
+## Comparing First Option and Second Option's total cummulative money paid:
+
+```{r}
+plot(x_1, y_1/1000, main= "Comparing First Option and Second Option", col.main = "orange",xlab = "Months", ylab="Paid money after months (thousands $)", ylim= c(0,600), xlim = c(0,300), type ="l", col="red", las = 0)
+points(x_1[239], y_1[239]/1000,pch = 22, col = "red")
+lines(x_2, y_4, col = "blue")
+points(x_2[301], y_4[301],pch = 22, col = "blue")
+```
+
+
+
+
+
+# Third Option: A hybrid between First and Second Option
+
+## Find critical horizon
+
+```{r}
+X_3 <- c(0:210)
+Y_3 <- 0.4/C^{300}*(300000*A^{300} - 1700*(A^{X_3}-B^{X_3})*A^{300 - X_3}/(A-B) - 1700 * B^{X_3}* (A^{300 - X_3} - B^{300 - X_3})/(3*A-3*B))
+Y_4 <- 1700*((B/C)^{X_3} - 1)/(B - C) + 1700*(B/C)^{X_3}*((B/C)^{300-X_3} - 1)/(3*B - 3*C)
+Y_5 <- Y_3 + Y_4
+Y_5
+```
+
+
+```{r}
+(Critical_horizon <- which.min(Y_5)-1)
+```
+## Total paid money
+
+```{r}
+plot(X_3, Y_5[0:length(X_3)], type = "l", main = "Third Option", col.main="orange", xlab = "X", ylab = "Total money paid with each X ($)", col = "darkblue")
+points(X_3[103],Y_5[103], pch = 22, col = "blue")
+```
+
+
+```{r}
+min(Y_5)
+```
+
+
+## Paid money per month
+
+```{r}
+const <- 0.4/C^{300}*(300000*A^{300} - 1700*(A^{102}-B^{102})*A^{300 - 102}/(A-B) - 1700 * B^{102}* (A^{300 - 102} - B^{300 - 102})/(3*A-3*B))
+P_1 <- c(0:102)
+P_2 <- c(103:300)
+B_1 <- 1700/C*(B/C)^{P_1}
+B_2 <- 1700*(B/C)^{102}/(3*C)*(B/C)^{P_2-102}
+plot(P_1, B_1, main="Third Option", col.main="orange", xlab = "Month", ylab = "Paid money per month ($)", type = "l", col = "red", xlim = c(0,310), ylim = c(0,4000))
+lines(P_2[1:(length(P_2) - 1)], B_2[1:(length(P_2)-1)], col = "red", type = "l")
+```
+
+## Applying SAVE PLAN
+```{r}
+m <- c(0:239)
+T_1 <- 0.4/C^{300}*(300000 - 1300*(B^m - 1)/(B - 1) - 1300/3*B^m*(B^{300 - m} - 1)/(B - 1))
+T_2 <- 1300/C*((B/C)^m - 1)/(B/C - 1)
+T_3 <- 1300*(B/C)^m/(3*C)*((B/C)^{300-m} - 1)/(B/C - 1)
+SAVE <- T_1 + T_2 + T_3
+
+plot(m, SAVE, main="SAVE PLAN", col.main="orange", type = "l", xlab = "X", ylab = "Total money paid with each X ($)", col = "darkblue")
+
+```
+
+```{r}
+min(SAVE)
+which.min(SAVE)-1
+```
+
+
